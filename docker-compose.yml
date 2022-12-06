@@ -1,0 +1,33 @@
+version: '3.4'
+
+services:
+  tempodotnet:
+    image: thanhmanci/test:tempodotnet
+    ports:
+      - 5104:5104
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5104
+    build:
+      context: .
+      dockerfile: TempoDotNet/Dockerfile
+    networks:
+      - backend
+
+  logservice:
+    image: thanhmanci/test:logservice
+    ports:
+      - 5076:5076
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5076
+    build:
+        context: .
+        dockerfile: LogService/Dockerfile
+    networks:
+      - backend
+
+networks:
+  backend:
+    name: backend
+    driver: bridge
