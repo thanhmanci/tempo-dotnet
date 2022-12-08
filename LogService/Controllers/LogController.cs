@@ -1,3 +1,6 @@
+using AutoMapper;
+using LogService.Entities;
+using LogService.Services;
 using Microsoft.AspNetCore.Mvc;
 using OpenTelemetry.Trace;
 
@@ -14,27 +17,35 @@ namespace LogService.Controllers
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
         };
 
+        private IUserService _userService;
+        private IMapper _mapper;
         private readonly ILogger<LogController> _logger;
 
-        public LogController(ILogger<LogController> logger, BooksService booksService)
+        public LogController(ILogger<LogController> logger, BooksService booksService,
+        IUserService userService,
+        IMapper mapper)
         {
             _logger = logger;
             _booksService = booksService;
+
+            _userService = userService;
+            _mapper = mapper;
         }
 
         [HttpGet("compute")]
         public async Task<IEnumerable<WeatherForecast>> ComputeAsync(int n, int x)
         {
-            Console.WriteLine($"Getting weather forecast traceID={Tracer.CurrentSpan.Context.TraceId.ToHexString()}");
 
-            var books = await _booksService.GetAsync();
-            foreach (var item in books)
+            for (int i = 0; i < 10; i++)
             {
-                Console.WriteLine("==============================================");
-                Console.WriteLine(item.Id);
-                Console.WriteLine("==============================================");
+                var books = await _booksService.GetAsync();
             }
+            var users = _userService.GetAll().ToList<User>();
 
+            for (int i = 0; i < 10; i++)
+            {
+                _userService.GetAll().ToList<User>();
+            }
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
