@@ -42,7 +42,7 @@
           "dependencies": {
             "Grpc.Core": {
               "target": "Package",
-              "version": "[2.34.0, )"
+              "version": "[2.46.5, )"
             },
             "Microsoft.VisualStudio.Azure.Containers.Tools.Targets": {
               "target": "Package",
@@ -50,23 +50,23 @@
             },
             "OpenTelemetry.Exporter.Console": {
               "target": "Package",
-              "version": "[1.0.0-rc1.1, )"
+              "version": "[1.4.0-beta.3, )"
             },
             "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
               "target": "Package",
-              "version": "[1.0.0-rc1.1, )"
+              "version": "[1.4.0-beta.3, )"
             },
             "OpenTelemetry.Extensions.Hosting": {
               "target": "Package",
-              "version": "[1.0.0-rc1.1, )"
+              "version": "[1.0.0-rc9.9, )"
             },
             "OpenTelemetry.Instrumentation.AspNetCore": {
               "target": "Package",
-              "version": "[1.0.0-rc1.1, )"
+              "version": "[1.0.0-rc9.9, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
-              "version": "[6.2.3, )"
+              "version": "[6.4.0, )"
             }
           },
           "imports": [

@@ -26,7 +26,7 @@ services.AddOpenTelemetryTracing(
 (builder) => builder.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("log-app"))
 .AddAspNetCoreInstrumentation()
 .AddConsoleExporter()
-.AddOtlpExporter(opt => { opt.Endpoint = "tempo.monitoring.svc:4317"; }));
+.AddOtlpExporter(opt => { opt.Endpoint = new Uri("http://tempo.monitoring.svc:4317"); }));
 
 
 

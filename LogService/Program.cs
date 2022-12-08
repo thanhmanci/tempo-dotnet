@@ -1,3 +1,4 @@
+using LogService;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -14,10 +15,14 @@ var services = builder.Services;
 services.AddOpenTelemetryTracing(
 (builder) => builder.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("log-app"))
 .AddAspNetCoreInstrumentation()
+.AddMongoDBInstrumentation()
 .AddConsoleExporter()
-.AddOtlpExporter(opt => { opt.Endpoint = "tempo.monitoring.svc:4317"; }));
+.AddOtlpExporter(opt => { opt.Endpoint = new Uri("http://tempo.monitoring.svc:4317"); }));
 
 
+builder.Services.Configure<BookStoreDatabaseSettings>(
+    builder.Configuration.GetSection("BookStoreDatabase"));
+builder.Services.AddSingleton<BooksService>();
 
 
 
