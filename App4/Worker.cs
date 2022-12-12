@@ -35,9 +35,9 @@ namespace App2
 
         private void StartRabbitConsumer()
         {
-            var factory = new ConnectionFactory() { HostName = Environment.GetEnvironmentVariable("rabbit_host") };
-            factory.UserName = "default_user_cWaAiZ9Bhtf_a4R3X8K";
-            factory.Password = "sZsreXaFfqrLErcH5EyMGNgepOLD-Y94";
+            var factory = new ConnectionFactory { HostName = "rabbitmsgqueue.worldretouch.pro" };
+            factory.UserName = "thanhmanci";
+            factory.Password = "Vietnam123";
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
