@@ -7,13 +7,13 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 services.AddHttpClient("App3", c =>
 {
-    string app = Environment.GetEnvironmentVariable("app_3").ToString();
+    string app = "http://app3.monitoring.svc:5003";
     c.BaseAddress = new Uri(app);
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator });
 
 services.AddHttpClient("App1", c =>
 {
-    string app = Environment.GetEnvironmentVariable("app_1").ToString();
+    string app = "http://app3.monitoring.svc:5001";
     c.BaseAddress = new Uri(app);
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator });
 

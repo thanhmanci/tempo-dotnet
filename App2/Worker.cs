@@ -50,7 +50,7 @@ namespace App2
                         _logger.LogInformation("Message Received: " + message);
                         using (var client = new HttpClient())
                         {
-                            string app = Environment.GetEnvironmentVariable("app_3").ToString();
+                            string app = "http://app3.monitoring.svc:5003";
                             client.BaseAddress = new Uri(app);
                             var result = await client.GetAsync("/sql-to-event?message=" + message);
                             string resultContent = await result.Content.ReadAsStringAsync();

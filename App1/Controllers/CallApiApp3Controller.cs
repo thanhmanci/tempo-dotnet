@@ -19,7 +19,6 @@ namespace App1.Controllers
         [HttpGet(Name = "http")]
         public async Task<HttpResponseMessage> GetAsync()
         {
-            _logger.LogInformation(Environment.GetEnvironmentVariable("app_3").ToString());
             var client = _clientFactory.CreateClient("App3");
             var response = await client.GetAsync($"/dummy");
 
