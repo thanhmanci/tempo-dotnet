@@ -7,7 +7,7 @@ namespace App3
     public class SqlRepository : ISqlRepository
     {
         private readonly IConfiguration _configuration;
-        private const string Query = "SELECT * From Users";
+        private const string Query = "SELECT * From Applications";
         ILogger<SqlRepository> _logger;
 
         public SqlRepository(IConfiguration configuration, ILogger<SqlRepository> logger)

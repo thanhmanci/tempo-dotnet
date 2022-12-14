@@ -35,37 +35,40 @@ namespace App2
             var factory = new ConnectionFactory { HostName = "rabbitmsgqueue.worldretouch.pro" };
             factory.UserName = "thanhmanci";
             factory.Password = "Vietnam123";
+
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-                channel.QueueDeclare(queue: "sample", durable: false, exclusive: false, autoDelete: false, arguments: null);
+                channel.QueueDeclare(queue: "sample",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
 
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += async (model, ea) =>
                 {
-                    try
+                    var body = ea.Body.ToArray(); 
+                    var message = Encoding.UTF8.GetString(body);
+                    Console.WriteLine(" [x] Received {0}", message);
+                    using (var client = new HttpClient())
                     {
-                        var body = ea.Body.ToArray();
-                        var message = Encoding.UTF8.GetString(body);
-                        _logger.LogInformation("Message Received: " + message);
-                        using (var client = new HttpClient())
-                        {
-                            string app = "http://app3.monitoring.svc:5003";
-                            client.BaseAddress = new Uri(app);
-                            var result = await client.GetAsync("/sql-to-event?message=" + message);
-                            string resultContent = await result.Content.ReadAsStringAsync();
-                            _logger.LogInformation(resultContent);
-                        }
-                        _logger.LogInformation("Send Request To sql-to-event: ");
+                        string app = "http://app3.monitoring.svc:5003";
+                        client.BaseAddress = new Uri(app);
+                        var result = await client.GetAsync("/sql-to-event?message=" + message);
+                        string resultContent = await result.Content.ReadAsStringAsync();
+                        _logger.LogInformation(resultContent);
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError($"There was an error processing the message: {ex} ");
-                    }
+                    _logger.LogInformation("Send Request To sql-to-event: ");
+
                 };
-                channel.BasicConsume(queue: "sample", autoAck: true, consumer: consumer);
+                channel.BasicConsume(queue: "sample", autoAck: false, consumer: consumer);
+
                 Console.WriteLine(" Press [enter] to exit.");
-                Console.ReadLine();
+                while (true)
+                {
+                    Console.ReadLine();
+                }
             }
 
         }
