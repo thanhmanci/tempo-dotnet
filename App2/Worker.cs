@@ -1,11 +1,12 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Diagnostics;
 using System.Text;
+using App2.Helpers;
 
 namespace App2
 {
@@ -14,12 +15,22 @@ namespace App2
         private static readonly ActivitySource Activity = new(nameof(Worker));
         private static readonly TextMapPropagator Propagator = new TraceContextPropagator();
 
+
         private readonly ILogger<Worker> _logger;
 
 
-        public Worker(ILogger<Worker> logger)
+        public Worker()
         {
-            _logger = logger;
+
+            using var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddFilter("Microsoft", LogLevel.Warning)
+                    .AddFilter("System", LogLevel.Warning)
+                    .AddFilter("LoggingConsoleApp.Program", LogLevel.Debug)
+                    .AddConsole();
+            });
+
+            _logger = loggerFactory.CreateLogger<Worker>();
         }
 
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -32,6 +43,7 @@ namespace App2
 
         private void StartRabbitConsumer()
         {
+
             var factory = new ConnectionFactory { HostName = "rabbitmsgqueue.worldretouch.pro" };
             factory.UserName = "thanhmanci";
             factory.Password = "Vietnam123";
@@ -39,27 +51,37 @@ namespace App2
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-                channel.QueueDeclare(queue: "sample",
-                                     durable: false,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
+                channel.QueueDeclare(queue: "sample", durable: false, exclusive: false, autoDelete: false, arguments: null);
 
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += async (model, ea) =>
                 {
-                    var body = ea.Body.ToArray(); 
-                    var message = Encoding.UTF8.GetString(body);
-                    Console.WriteLine(" [x] Received {0}", message);
-                    using (var client = new HttpClient())
+                    var parentContext = Propagator.Extract(default, ea.BasicProperties, ActivityHelper.ExtractTraceContextFromBasicProperties);
+                    Baggage.Current = parentContext.Baggage;
+
+                    using (var activity = Activity.StartActivity("Process Message", ActivityKind.Consumer, parentContext.ActivityContext))
                     {
-                        string app = "http://app3.monitoring.svc:5003";
-                        client.BaseAddress = new Uri(app);
-                        var result = await client.GetAsync("/sql-to-event?message=" + message);
-                        string resultContent = await result.Content.ReadAsStringAsync();
-                        _logger.LogInformation(resultContent);
+
+                        var body = ea.Body.ToArray();
+                        var message = Encoding.UTF8.GetString(body);
+                        ActivityHelper.AddActivityTags(activity);
+                        Console.WriteLine(" [x] Received {0}", message);
+                        using (var client = new HttpClient())
+                        {
+                            try
+                            {
+                                string app = "http://localhost:5003";
+                                client.BaseAddress = new Uri(app);
+                                var result = await client.GetAsync("/sql-to-event?message=" + message);
+                                string resultContent = await result.Content.ReadAsStringAsync();
+                                _logger.LogInformation(resultContent);
+                            }
+                            catch
+                            {
+                            }
+                        }
+                        _logger.LogInformation("Send Request To sql-to-event: ");
                     }
-                    _logger.LogInformation("Send Request To sql-to-event: ");
 
                 };
                 channel.BasicConsume(queue: "sample", autoAck: false, consumer: consumer);

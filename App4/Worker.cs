@@ -7,8 +7,10 @@ using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Diagnostics;
 using System.Text;
+using App4.Helpers;
+using OpenTelemetry;
 
-namespace App2
+namespace App4
 {
     public class Worker : BackgroundService
     {
@@ -42,27 +44,39 @@ namespace App2
             using (var channel = connection.CreateModel())
             {
                 channel.QueueDeclare(queue: "sample_2", durable: false, exclusive: false, autoDelete: false, arguments: null);
+                channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
 
                 var consumer = new EventingBasicConsumer(channel);
                 consumer.Received += async (model, ea) =>
                 {
-                    try
-                    {
-                        var body = ea.Body.ToArray();
-                        var message = Encoding.UTF8.GetString(body);
-                        _logger.LogInformation("Message Received: " + message);
 
-                        if (string.IsNullOrEmpty(message))
+                    var parentContext = Propagator.Extract(default,
+                        ea.BasicProperties,
+                        ActivityHelper.ExtractTraceContextFromBasicProperties);
+
+                    Baggage.Current = parentContext.Baggage;
+
+                    using (var activity = Activity.StartActivity("Process Message", ActivityKind.Consumer, parentContext.ActivityContext))
+                    {
+                        try
                         {
-                            _logger.LogInformation("Add item into redis cache");
-                            await _cache.SetStringAsync("rabbit.message", message, new DistributedCacheEntryOptions{AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(1)});
+                            var body = ea.Body.ToArray();
+                            var message = Encoding.UTF8.GetString(body);
+                            ActivityHelper.AddActivityTags(activity);
+                            _logger.LogInformation("Message Received: " + message);
+
+                            if (string.IsNullOrEmpty(message))
+                            {
+                                _logger.LogInformation("Add item into redis cache");
+                                await _cache.SetStringAsync("rabbit.message", message, new DistributedCacheEntryOptions { AbsoluteExpiration = DateTimeOffset.Now.AddMinutes(1) });
+                            }
+
+
                         }
-
-
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError($"There was an error processing the message: {ex} ");
+                        catch (Exception ex)
+                        {
+                            _logger.LogError($"There was an error processing the message: {ex} ");
+                        }
                     }
                 };
                 channel.BasicConsume(queue: "sample_2", autoAck: true, consumer: consumer);

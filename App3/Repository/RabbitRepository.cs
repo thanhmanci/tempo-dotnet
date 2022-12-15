@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using OpenTelemetry;
 using OpenTelemetry.Context.Propagation;
 using RabbitMQ.Client;
 using System.Diagnostics;
@@ -22,32 +23,59 @@ namespace App3
             _configuration = configuration;
         }
 
+        private void InjectContextIntoHeader(IBasicProperties props, string key, string value)
+        {
+            try
+            {
+                props.Headers ??= new Dictionary<string, object>();
+                props.Headers[key] = value;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to inject trace context.");
+            }
+        }
+
+        private void AddActivityToHeader(Activity activity, IBasicProperties props)
+        {
+            Propagator.Inject(new PropagationContext(activity.Context, Baggage.Current), props, InjectContextIntoHeader);
+            activity?.SetTag("messaging.system", "rabbitmq");
+            activity?.SetTag("messaging.destination_kind", "queue");
+            activity?.SetTag("messaging.rabbitmq.queue", "sample_2");
+        }
+
         public void Publish(IEvent evt)
         {
             try
             {
-                var factory = new ConnectionFactory { HostName = "rabbitmsgqueue.worldretouch.pro" };
-                factory.UserName = "thanhmanci";
-                factory.Password = "Vietnam123";
-                using (var connection = factory.CreateConnection())
-                using (var channel = connection.CreateModel())
+
+                using (var activity = Activity.StartActivity("RabbitMq Publish", ActivityKind.Producer))
                 {
-                    var props = channel.CreateBasicProperties();
 
+                    var factory = new ConnectionFactory { HostName = "rabbitmsgqueue.worldretouch.pro" };
+                    factory.UserName = "thanhmanci";
+                    factory.Password = "Vietnam123";
+                    using (var connection = factory.CreateConnection())
+                    using (var channel = connection.CreateModel())
+                    {
+                        var props = channel.CreateBasicProperties();
 
-                    channel.QueueDeclare(queue: "sample_2",
-                        durable: false,
-                        exclusive: false,
-                        autoDelete: false,
-                        arguments: null);
+                        AddActivityToHeader(activity, props);
 
-                    var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(evt));
-                    _logger.LogInformation("Publishing message to queue");
+                        channel.QueueDeclare(queue: "sample_2",
+                            durable: false,
+                            exclusive: false,
+                            autoDelete: false,
+                            arguments: null);
 
-                    channel.BasicPublish(exchange: "",
-                        routingKey: "sample_2",
-                        basicProperties: props,
-                        body: body);
+                        var body = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(evt));
+                        _logger.LogInformation("Publishing message to queue");
+
+                        channel.BasicPublish(exchange: "",
+                            routingKey: "sample_2",
+                            basicProperties: props,
+                            body: body);
+                    }
                 }
             }
             catch (Exception e)

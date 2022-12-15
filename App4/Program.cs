@@ -1,19 +1,36 @@
-﻿using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.StackExchangeRedis;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using System;
 
 
-namespace App2
+namespace App4
 {
     public class Program
     {
         public static void Main(string[] args)
         {
+
+            using var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddFilter("Microsoft", LogLevel.Warning)
+                    .AddFilter("System", LogLevel.Warning)
+                    .AddFilter("LoggingConsoleApp.Program", LogLevel.Debug)
+                    .AddConsole();
+            });
+            Sdk.CreateTracerProviderBuilder()
+                .AddHttpClientInstrumentation()
+                .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("App4"))
+                .AddSource(nameof(Worker))
+                .AddConsoleExporter()
+                .AddOtlpExporter(opt =>
+                {
+                    opt.Endpoint = new Uri("http://localhost:4317");
+                    opt.ExportProcessorType = OpenTelemetry.ExportProcessorType.Simple;
+                }).Build();
+
             CreateHostBuilder(args).Build().Run();
         }
 
@@ -27,26 +44,6 @@ namespace App2
                         options.Configuration = "redis.monitoring.svc:6379";
 
                     });
-
-                    services.AddOpenTelemetryTracing(builder =>
-                    {
-                        var provider = services.BuildServiceProvider();
-                        IConfiguration config = provider
-                                .GetRequiredService<IConfiguration>();
-
-                        builder.AddAspNetCoreInstrumentation()
-                            .AddHttpClientInstrumentation()
-                            .Configure((sp, builder) =>
-                            {
-                                RedisCache cache = (RedisCache)sp.GetRequiredService<IDistributedCache>();
-                                builder.AddRedisInstrumentation(cache.GetConnection());
-                            })
-                            .AddSource(nameof(Worker))
-                            .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("App4"))
-                            .AddConsoleExporter()
-                            .AddOtlpExporter(opt => { opt.Endpoint = new Uri("http://tempo.monitoring.svc:4317"); });
-
-                });
 
                 });
     }

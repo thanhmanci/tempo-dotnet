@@ -24,7 +24,7 @@ namespace App3.Controllers
             _logger.LogInformation("Request To /sql-to-event App3, message: " + message);
             if (!string.IsNullOrEmpty(message))
             {
-                await _repository.Persist(message);
+                //await _repository.Persist(message);
                 _eventPublisher.Publish(new MessagePersistedEvent { Message = message });
             }
 
