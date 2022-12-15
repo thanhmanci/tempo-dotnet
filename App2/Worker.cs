@@ -70,7 +70,7 @@ namespace App2
                         {
                             try
                             {
-                                string app = "http://localhost:5003";
+                                string app = "http://app3.monitoring.svc:5003";
                                 client.BaseAddress = new Uri(app);
                                 var result = await client.GetAsync("/sql-to-event?message=" + message);
                                 string resultContent = await result.Content.ReadAsStringAsync();

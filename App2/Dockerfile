@@ -22,6 +22,6 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENV rabbit_host=localhost
-ENV app_1=http://localhost:5001
-ENV app_3=http://localhost:5003
+ENV app_1=http://app1.monitoring.svc:5001
+ENV app_3=http://app3.monitoring.svc:5003
 ENTRYPOINT ["dotnet", "App2.dll"]

@@ -27,7 +27,7 @@ namespace App4
                 .AddConsoleExporter()
                 .AddOtlpExporter(opt =>
                 {
-                    opt.Endpoint = new Uri("http://localhost:4317");
+                    opt.Endpoint = new Uri("http://tempo.monitoring.svc:4317");
                     opt.ExportProcessorType = OpenTelemetry.ExportProcessorType.Simple;
                 }).Build();
 

@@ -8,13 +8,13 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 services.AddHttpClient("App3", c =>
 {
-    string app = "http://localhost:5003";
+    string app = "http://app3.monitoring.svc:5003";
     c.BaseAddress = new Uri(app);
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator });
 
 services.AddHttpClient("App1", c =>
 {
-    string app = "http://localhost:5001";
+    string app = "http://app1.monitoring.svc:5001";
     c.BaseAddress = new Uri(app);
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator });
 
@@ -27,7 +27,7 @@ services.AddOpenTelemetryTracing((builder) => builder.SetResourceBuilder(Resourc
 .AddMongoDBInstrumentation()
 .AddSqlClientInstrumentation(options => options.SetDbStatementForText = true)
 .AddConsoleExporter()
-.AddOtlpExporter(opt => { opt.Endpoint = new Uri("http://localhost:4317"); }));
+.AddOtlpExporter(opt => { opt.Endpoint = new Uri("http://tempo.monitoring.svc:4317"); }));
 
 
 
