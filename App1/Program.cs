@@ -1,8 +1,18 @@
 using App1.Controllers;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Formatting.Compact;
+
+
+Log.Logger = new LoggerConfiguration()
+  .WriteTo.File(new CompactJsonFormatter(), "./logs/myapp.json")
+  .CreateLogger();
+
+Log.Information("Starting web application");
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 // Add services to the container.
 var services = builder.Services;
